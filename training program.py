@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
-MNIST手写数字识别模型训练（飞桨版）
-适用于新手的极简教程
+MNIST手写数字识别模型训练(飞桨版)
+适用于新手的极简教程 
 """
 
 import paddle
@@ -11,7 +11,7 @@ from paddle.vision.models import LeNet
 import matplotlib.pyplot as plt
 
 # #################### 配置参数 ####################
-BATCH_SIZE = 64      # 每次训练输入的图片数量（越大训练越快，但需要更多内存）
+BATCH_SIZE = 128      # 每次训练输入的图片数量（越大训练越快，但需要更多内存）
 EPOCHS = 5           # 整个数据集遍历训练的次数
 LR = 0.001           # 学习率（控制参数调整速度，太小训练慢，太大会震荡）
 MODEL_SAVE_PATH = './mnist_model'  # 模型保存路径
@@ -31,6 +31,7 @@ def load_data():
     train_loader = paddle.io.DataLoader(
         train_dataset,
         batch_size=BATCH_SIZE,
+        num_workers = 2,
         shuffle=True  # 打乱数据顺序，防止模型记忆顺序
     )
 
@@ -67,7 +68,9 @@ def train_model(model, train_loader, test_loader):
     """
     # 设置模型为训练模式（启用Dropout等训练专用层）
     model.train()
-    
+
+    paddle.device.set_device('gpu:1')
+
     # 定义优化器和损失函数
     optimizer = paddle.optimizer.Adam(
         learning_rate=LR,
