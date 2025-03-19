@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 
 # #################### 配置参数 ####################
 BATCH_SIZE = 128      # 每次训练输入的图片数量（越大训练越快，但需要更多内存）
-EPOCHS = 5           # 整个数据集遍历训练的次数
+EPOCHS = 8           # 整个数据集遍历训练的次数
 LR = 0.001           # 学习率（控制参数调整速度，太小训练慢，太大会震荡）
 MODEL_SAVE_PATH = './mnist_model'  # 模型保存路径
 
@@ -27,7 +27,7 @@ def load_data():
 
     # 下载并加载训练集
     train_dataset = MNIST(mode='train', transform=transform)
-    # 创建数据加载器，自动分批和打乱顺序
+    #创建数据加载器，自动分批和打乱顺序
     train_loader = paddle.io.DataLoader(
         train_dataset,
         batch_size=BATCH_SIZE,
@@ -69,17 +69,28 @@ def train_model(model, train_loader, test_loader):
     # 设置模型为训练模式（启用Dropout等训练专用层）
     model.train()
 
-    paddle.device.set_device('gpu:1')
+    #paddle.device.set_device('gpu:1')
+
+# 为模型训练做准备，设置优化器及其学习率，并将网络的参数传入优化器，设置损失函数和精度计算方式
+    # model.prepare(
+    #     optimizer=paddle.optimizer.Adam(
+    #         learning_rate=0.001, parameters=model.parameters()
+    #     ),
+    #     loss=paddle.nn.CrossEntropyLoss(),
+    #     metrics=paddle.metric.Accuracy(),
+    # )
 
     # 定义优化器和损失函数
     optimizer = paddle.optimizer.Adam(
-        learning_rate=LR,
-        parameters=model.parameters()  # 需要优化的参数
-    )
+         learning_rate=LR,
+         parameters=model.parameters()  # 需要优化的参数
+     )
     loss_fn = paddle.nn.CrossEntropyLoss()
 
     # 记录训练过程中的指标
     history = {'loss': [], 'acc': [], 'val_loss': [], 'val_acc': []}
+
+    #model.fit(train_loader, epochs=EPOCHS, batch_size=BATCH_SIZE, verbose=1)
 
     # 开始训练循环
     for epoch in range(EPOCHS):
@@ -96,10 +107,10 @@ def train_model(model, train_loader, test_loader):
 
             # 计算损失
             loss = loss_fn(predicts, y_data)
-            total_loss += loss.numpy()[0]
+            total_loss += loss.numpy()
 
             # 计算准确率
-            correct += paddle.metric.accuracy(predicts, y_data).numpy()[0] * BATCH_SIZE
+            correct += paddle.metric.accuracy(predicts, y_data).numpy() * BATCH_SIZE
 
             # 反向传播（计算梯度）
             loss.backward()
@@ -110,7 +121,7 @@ def train_model(model, train_loader, test_loader):
 
             # 每100个batch打印进度
             if batch_id % 100 == 0:
-                print(f'Epoch {epoch+1}/{EPOCHS}, Batch {batch_id}, Loss: {loss.numpy()[0]:.4f}')
+                print(f'Epoch {epoch+1}/{EPOCHS}, Batch {batch_id}, Loss: {loss.numpy():.4f}')
 
         # 计算本epoch的平均损失和准确率
         avg_loss = total_loss / len(train_loader)
@@ -130,10 +141,33 @@ def train_model(model, train_loader, test_loader):
         print(f'训练损失: {avg_loss:.4f} | 训练准确率: {avg_acc:.4f}')
         print(f'验证损失: {val_loss:.4f} | 验证准确率: {val_acc:.4f}\n')
 
+
+    # 用 evaluate 在测试集上对模型进行验证
+    # eval_result = model.evaluate(test_loader, verbose=1)
+    # print(eval_result)
+
     # 保存模型
     paddle.save(model.state_dict(), MODEL_SAVE_PATH + '.pdparams')
     paddle.save(optimizer.state_dict(), MODEL_SAVE_PATH + '.pdopt')
     print(f'模型已保存至: {MODEL_SAVE_PATH}')
+
+    # # 用 predict 在测试集上对模型进行推理
+    # test_result = model.predict(test_loader)
+
+    # # 由于模型是单一输出，test_result的形状为[1, 10000]，10000是测试数据集的数据量。这里打印第一个数据的结果，这个数组表示每个数字的预测概率
+    # print(len(test_result))
+    # print(test_result[0][0])
+
+    # # 从测试集中取出一张图片
+    # img, label = test_loader[0]
+
+    # # 打印推理结果，这里的argmax函数用于取出预测值中概率最高的一个的下标，作为预测标签
+    # pred_label = test_result[0][0].argmax()
+    # print("true label: {}, pred label: {}".format(label[0], pred_label))
+
+    # # 使用matplotlib库，可视化图片
+    # plt.imshow(img[0])
+
 
     return history
 
@@ -153,8 +187,8 @@ def evaluate_model(model, data_loader, loss_fn):
             
             predicts = model(x_data)
             loss = loss_fn(predicts, y_data)
-            total_loss += loss.numpy()[0]
-            correct += paddle.metric.accuracy(predicts, y_data).numpy()[0] * BATCH_SIZE
+            total_loss += loss.numpy()
+            correct += paddle.metric.accuracy(predicts, y_data).numpy() * BATCH_SIZE
     
     avg_loss = total_loss / len(data_loader)
     avg_acc = correct / len(data_loader.dataset)
