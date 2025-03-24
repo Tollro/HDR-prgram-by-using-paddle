@@ -1,6 +1,8 @@
 import paddle
 from paddle.vision.datasets import MNIST
 from paddle.vision.transforms import ToTensor
+import numpy as np
+import matplotlib.pyplot as plt
 
 # # 定义 LeNet 模型
 # class LeNet(paddle.nn.Layer):
@@ -30,19 +32,45 @@ model_state_dict = paddle.load('./mnist_model.pdparams')
 model.set_state_dict(model_state_dict)
 model.eval()  # 设置为评估模式
 
+# # 加载 MNIST 测试数据集
+# test_dataset = MNIST(mode='test', transform=ToTensor())
+# test_loader = paddle.io.DataLoader(test_dataset, batch_size=64, shuffle=False)
+
 # 加载 MNIST 测试数据集
-test_dataset = MNIST(mode='test', transform=ToTensor())
-test_loader = paddle.io.DataLoader(test_dataset, batch_size=64, shuffle=False)
+transform = paddle.vision.transforms.Compose([
+    paddle.vision.transforms.ToTensor(),
+    paddle.vision.transforms.Normalize(mean=[0.5], std=[0.5])
+])
+test_dataset = paddle.vision.datasets.MNIST(mode='test', transform=transform)
 
-# 验证过程：统计预测正确的数量
-correct = 0
-total = 0
-for images, labels in test_loader:
-    outputs = model(images)
-    pred = outputs.argmax(axis=1)
-    labels = paddle.squeeze(labels, axis=1) if len(labels.shape) > 1 else labels
-    correct += (pred == labels).numpy().sum()
-    total += labels.shape[0]
+# 随机选择一些样本进行可视化验证
+num_samples = 5  # 设置要可视化的样本数量
+indices = np.random.choice(len(test_dataset), num_samples, replace=False)
 
-accuracy = correct / total * 100
-print("Test Accuracy: {:.2f}%".format(accuracy))
+plt.figure(figsize=(10, 5))
+for i, idx in enumerate(indices):
+    img, label = test_dataset[idx]
+    img_input = img.unsqueeze(0)  # 增加 batch 维度
+    output = model(img_input)
+    pred_label = output.argmax(axis=1).numpy()[0]
+
+    # 可视化
+    plt.subplot(1, num_samples, i + 1)
+    plt.imshow(img.squeeze().numpy(), cmap='gray')
+    plt.title(f'Pred: {pred_label}\nTrue: {label}')
+    plt.axis('off')
+
+plt.show()
+
+# # 验证过程：统计预测正确的数量
+# correct = 0
+# total = 0
+# for images, labels in test_loader:
+#     outputs = model(images)
+#     pred = outputs.argmax(axis=1)
+#     labels = paddle.squeeze(labels, axis=1) if len(labels.shape) > 1 else labels
+#     correct += (pred == labels).numpy().sum()
+#     total += labels.shape[0]
+
+# accuracy = correct / total * 100
+# print("Test Accuracy: {:.2f}%".format(accuracy))
