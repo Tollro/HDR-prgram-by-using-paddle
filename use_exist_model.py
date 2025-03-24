@@ -1,10 +1,10 @@
 import cv2
 import paddle
-import matplotlib.pyplot as plt
 import numpy as np
+import paddlehub as hub
 
 
-def enhanced_preprocess(img_path, sharpen_strength=1.0, contrast_alpha=2, contrast_beta=30):
+def enhanced_preprocess(img_path, sharpen_strength=1.5, contrast_alpha=1.5, contrast_beta=30):
     """
     改进的预处理流程：
     1. 读取图像
@@ -46,13 +46,13 @@ def enhanced_preprocess(img_path, sharpen_strength=1.0, contrast_alpha=2, contra
                                   cv2.THRESH_BINARY_INV, 11, 2)
     
     # 形态学操作（去除小噪点）
-    kernel = np.ones((2,2), np.uint8)
-    processed = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel,iterations=1)
+    kernel = np.ones((3,3), np.uint8)
+    processed = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
     
     # 调整尺寸
     resized = cv2.resize(processed, (28, 28))
     
-    cv2.imshow('处理后图像',processed)
+    cv2.imshow('处理后图像',img)
     # 等待用户按键（0 表示无限等待）
     cv2.waitKey(0)
     # 关闭所有 OpenCV 创建的窗口
@@ -65,60 +65,28 @@ def enhanced_preprocess(img_path, sharpen_strength=1.0, contrast_alpha=2, contra
     return normalized[np.newaxis, np.newaxis, :, :]
 
 
-#普通处理图像
+# 预处理函数（需调整输入为 224x224 RGB）
 def preprocess_image(img_path):
-    # 读取图像
-    img = cv2.imread(img_path)
-    if img is None:
-        raise ValueError("Image not found or invalid path")
-    
-    cv2.imshow('Original', img)
-    
-    # 转换为灰度图
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    
-    # 二值化反转（MNIST风格：白字黑底）
-    _, thresh = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY_INV)
-    
-    # 调整尺寸为28x28
-    resized = cv2.resize(thresh, (28, 28))
-    
-    cv2.imshow('Processed', img)
-
-    # 归一化并转换数据类型
-    normalized = resized.astype('float32') / 255.0
-    
-    # 调整维度为 [C, H, W] 并添加batch维度
-    input_tensor = normalized[np.newaxis, np.newaxis, :, :]
-    
-    return input_tensor
-
-def predict_single_image(img_path):
-    # 预处理图像
-    input_tensor = enhanced_preprocess(img_path)
-    #input_tensor = preprocess_image(img_path)
-    
-    # 转换为Paddle Tensor
-    input_data = paddle.to_tensor(input_tensor)
-    
-    # 预测
-    with paddle.no_grad():
-        output = model(input_data)
-        print('result',output)
-        prediction = paddle.argmax(output, axis=1).numpy()[0]
-    
-    return prediction
+    img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
+    img = cv2.cvtColor(img, cv2.COLOR_GRAY2RGB)  # 转 RGB
+    img = cv2.resize(img, (224, 224))
+    img = (img.astype('float32') - 127.5) / 127.5  # 归一化到 [-1,1]
+    return img.transpose([2, 0, 1])[np.newaxis, :]  # 调整维度为 [1,3,224,224]
 
 
 #####################主程序#####################
-img_path = './new_tests/6_0.jpg'
-model = paddle.vision.models.LeNet()
-model_state_dict = paddle.load('./mnist_model.pdparams')  # 替换为你的模型路径
-model.set_state_dict(model_state_dict)
-model.eval()
+#使用官方提供的参数
+img_path = './test4_1.png'
+input_tensor = preprocess_image(img_path)
 
-pred = predict_single_image(img_path)
-print(f"Predicted digit: {pred}")
+model = hub.Module(name="resnet50_vd_ssld",inputsize=224) #直接调用内置resnet
+model.fc = hub.LinearLayer(input_dim=2048, output_dim=10) #修改输出层为10分类
+model.load_parameters('resnet50_mnist.pdparams')          #加载mnist与训练参数
+
+result = model(input_tensor)
+prediction = np.argmax(result.numpy())
+print(f"预测结果: {prediction}")
+
 
 # # 读取原始图像并显示
 # im = cv2.imread(img_path)
