@@ -103,8 +103,8 @@ def preprocess_image(img_path):
 
 def predict_single_image(img_path):
     # 预处理图像
-    input_tensor = enhanced_preprocess(img_path)
-    #input_tensor = preprocess_image(img_path)
+    #input_tensor = enhanced_preprocess(img_path)
+    input_tensor = preprocess_image(img_path)
     
     # 转换为Paddle Tensor
     input_data = paddle.to_tensor(input_tensor)
@@ -119,7 +119,7 @@ def predict_single_image(img_path):
 
 
 #####################主程序#####################
-img_path = './new_tests/2_0.jpg'
+img_path = './new_tests/3_0.jpg'
 model = paddle.vision.models.LeNet()
 model_state_dict = paddle.load('./mnist_model.pdparams')  # 替换为你的模型路径
 model.set_state_dict(model_state_dict)
