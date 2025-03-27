@@ -18,10 +18,10 @@ def process_digits(image_path):
     global digit_roi
     # 读取图像
     img = cv2.imread(image_path)
-    img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+    #img_rgb = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
 
     # 执行 OCR（检测+识别）
-    result = ocr.ocr(img_rgb, cls=True)
+    result = ocr.ocr(img, cls=True)
 
     # 提取数字区域和识别结果
     digits = []
@@ -48,19 +48,30 @@ def process_digits(image_path):
                     'text': text
                 })
 
-    # 可视化结果
-    plt.figure(figsize=(12, 6))
-    plt.subplot(1, 2, 1)
-    plt.imshow(img_rgb)
-    plt.title('Original Image')
-    
-    plt.subplot(1, 2, 2)
-    show_boxes = img_rgb.copy()
+    # 使用OpenCV可视化结果
+    show_boxes = img.copy()
     for d in digits:
-        cv2.polylines(show_boxes, [d['box']], True, (0, 255, 0), 2)
-    plt.imshow(show_boxes)
-    plt.title('Detected Digits')
-    plt.show()
+        # 在BGR图像上绘制绿色框
+        cv2.polylines(show_boxes, [d['box']], isClosed=True, color=(0, 255, 0), thickness=2)
+    
+    # 转换颜色空间用于显示
+    original_display = img
+    detected_display = cv2.cvtColor(show_boxes, cv2.COLOR_RGB2BGR)
+    
+    # 添加文字标注
+    cv2.putText(original_display, 'Original Image', (10, 30), 
+                cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+    cv2.putText(detected_display, 'Detected Digits', (10, 30), 
+                cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+    
+    # 水平拼接对比显示
+    combined = cv2.hconcat([original_display, detected_display])
+    
+    # 显示并等待
+    cv2.imshow('Digit Detection Results', combined)
+    cv2.waitKey(0)
+    cv2.destroyAllWindows()
+
     
     return digits
 
@@ -100,61 +111,61 @@ if __name__ == "__main__":
         print(f"数字 {idx}: 坐标={d['box'].tolist()}, OCR识别结果={d['text']}")
 
 #########################################LeNet区域#######################################
-import paddle
-#普通处理图像
-def preprocess_image(img):
+# import paddle
+# #普通处理图像
+# def preprocess_image(img):
     
-    if img is None:
-        raise ValueError("Image not found or invalid path")
+#     if img is None:
+#         raise ValueError("Image not found or invalid path")
     
-    cv2.imshow('处理前图像',img)
-    # 等待用户按键（0 表示无限等待）
-    cv2.waitKey(0)
-    # 关闭所有 OpenCV 创建的窗口
-    cv2.destroyAllWindows()
+#     cv2.imshow('处理前图像',img)
+#     # 等待用户按键（0 表示无限等待）
+#     cv2.waitKey(0)
+#     # 关闭所有 OpenCV 创建的窗口
+#     cv2.destroyAllWindows()
     
-    # 转换为灰度图
-    gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
+#     # 转换为灰度图
+#     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
     
-    # 二值化反转（MNIST风格：白字黑底）
-    _, thresh = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY_INV)
+#     # 二值化反转（MNIST风格：白字黑底）
+#     _, thresh = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY_INV)
     
-    # 调整尺寸为28x28
-    resized = cv2.resize(thresh, (28, 28))
+#     # 调整尺寸为28x28
+#     resized = cv2.resize(thresh, (28, 28))
     
-    cv2.imshow('处理后图像',thresh)
-    # 等待用户按键（0 表示无限等待）
-    cv2.waitKey(0)
-    # 关闭所有 OpenCV 创建的窗口
-    cv2.destroyAllWindows()
+#     cv2.imshow('处理后图像',thresh)
+#     # 等待用户按键（0 表示无限等待）
+#     cv2.waitKey(0)
+#     # 关闭所有 OpenCV 创建的窗口
+#     cv2.destroyAllWindows()
 
-    # 归一化并转换数据类型
-    normalized = resized.astype('float32') / 255.0
+#     # 归一化并转换数据类型
+#     normalized = resized.astype('float32') / 255.0
     
-    # 调整维度为 [C, H, W] 并添加batch维度
-    input_tensor = normalized[np.newaxis, np.newaxis, :, :]
+#     # 调整维度为 [C, H, W] 并添加batch维度
+#     input_tensor = normalized[np.newaxis, np.newaxis, :, :]
     
-    return input_tensor
+#     return input_tensor
 
-def predict_single_image(img):
-    # 预处理图像
-    input_tensor = preprocess_image(img)
+# def predict_single_image(img):
+#     # 预处理图像
+#     input_tensor = preprocess_image(img)
     
-    # 转换为Paddle Tensor
-    input_data = paddle.to_tensor(input_tensor)
+#     # 转换为Paddle Tensor
+#     input_data = paddle.to_tensor(input_tensor)
     
-    # 预测
-    with paddle.no_grad():
-        output = model(input_data)
-        print('result',output)
-        prediction = paddle.argmax(output, axis=1).numpy()[0]
+#     # 预测
+#     with paddle.no_grad():
+#         output = model(input_data)
+#         print('result',output)
+#         prediction = paddle.argmax(output, axis=1).numpy()[0]
     
-    return prediction
+#     return prediction
 
-model = paddle.vision.models.LeNet()
-model_state_dict = paddle.load('./mnist_model.pdparams')  # 替换为你的模型路径
-model.set_state_dict(model_state_dict)
-model.eval()
+# model = paddle.vision.models.LeNet()
+# model_state_dict = paddle.load('./mnist_model.pdparams')  # 替换为你的模型路径
+# model.set_state_dict(model_state_dict)
+# model.eval()
 
-pred = predict_single_image(digit_roi)
-print(f"LeNet识别结果: {pred}")
+# pred = predict_single_image(digit_roi)
+# print(f"LeNet识别结果: {pred}")q
