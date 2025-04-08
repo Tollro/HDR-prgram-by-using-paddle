@@ -29,16 +29,23 @@ class DigitOCR_RKNN:
         self.rec_threshold = 0.5   # 识别置信度阈值
 
     def _init_rknn_model(self, model_path):
-        """加载并初始化RKNN模型"""
-        rknn = RKNN()
+        """加载并初始化 RKNN 模型（适用于 RKNN Toolkit 2.3）"""
+        rknn = RKNN(verbose=True)
         
-        # 加载预转换的RKNN模型
-        if rknn.load_rknn(model_path) != 0:
-            raise ValueError(f"模型加载失败: {model_path}")
+        # 加载预转换的 RKNN 模型
+        ret = rknn.load_rknn(model_path)
+        if ret != 0:
+            raise ValueError(f"模型加载失败: {model_path}, 错误码: {ret}")
         
         # 初始化运行时环境
-        if rknn.init_runtime(target='rk3576') != 0:
-            raise ValueError("运行时环境初始化失败")
+        # 请根据您的硬件特性确认 core_mask 的设置，如板卡支持双核 NPU 则使用 RKNN.NPU_CORE_0_1，
+        # 如果只有单核 NPU 则可设置为 RKNN.NPU_CORE_0
+        ret = rknn.init_runtime(
+            target='rk3576',
+            core_mask=RKNN.NPU_CORE_0_1
+        )
+        if ret != 0:
+            raise ValueError("运行时环境初始化失败，错误码: {}".format(ret))
         
         return rknn
 
@@ -53,16 +60,25 @@ class DigitOCR_RKNN:
         """
         # 保持长宽比的缩放
         h, w = img.shape[:2]
-        scale = min(self.det_input_size[0]/w, self.det_input_size[1]/h)
-        resized = cv2.resize(img, None, fx=scale, fy=scale)
-
-        # 填充到模型输入尺寸
-        padded = np.full((self.det_input_size[1], self.det_input_size[0], 3), 114, dtype=np.uint8)
-        padded[:resized.shape[0], :resized.shape[1]] = resized
-
-        # 归一化并转换通道顺序
-        normalized = (padded / 255.0).astype(np.float32)
-        return np.transpose(normalized, [2, 0, 1])  # HWC -> CHW
+        target_size = 480  # 与模型输入尺寸一致
+        
+        # 计算缩放比例
+        scale = min(target_size/w, target_size/h)
+        new_w = int(w * scale)
+        new_h = int(h * scale)
+        resized = cv2.resize(img, (new_w, new_h))
+        
+        # 创建填充后的画布
+        padded = np.zeros((target_size, target_size, 3), dtype=np.uint8)
+        padded[:new_h, :new_w] = resized
+        
+        # 转换维度顺序并添加批处理维度
+        processed = padded.transpose(2, 0, 1)  # HWC -> CHW
+        processed = np.expand_dims(processed, axis=0)  # 添加batch维度
+        
+        # 归一化处理（根据模型训练时的配置）
+        normalized = (processed.astype(np.float32) / 255.0 - 0.5) / 0.5
+        return normalized
 
     def _postprocess_det(self, outputs, scale):
         """
@@ -278,9 +294,9 @@ class DigitOCR_RKNN:
 if __name__ == "__main__":
     # 初始化OCR引擎
     ocr_engine = DigitOCR_RKNN(
-        det_model_path="./models/text_det.rknn",
-        cls_model_path="./models/orientation_cls.rknn",
-        rec_model_path="./models/digit_rec.rknn"
+        det_model_path="./ppocrv4_det_rk3576.rknn",
+        cls_model_path="./ch_ppocr4_cls_rk3576.rknn",
+        rec_model_path="./ppocrv4_rec_rk3576.rknn"
     )
 
     # 初始化摄像头（使用V4L2驱动）

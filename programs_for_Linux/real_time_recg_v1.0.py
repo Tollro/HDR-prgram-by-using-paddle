@@ -112,6 +112,3 @@ if __name__ == "__main__":
         
         if cv2.waitKey(1) & 0xFF == ord('q'):  # 按 'q' 键退出
             break
-    
-        
-    
