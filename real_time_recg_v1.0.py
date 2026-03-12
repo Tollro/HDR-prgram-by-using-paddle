@@ -86,10 +86,9 @@ def preprocess_roi(roi):
     
     return resized
 
-#########################################主程序###########################################
+#主程序
 if __name__ == "__main__":
 
-    # 使用 DirectShow 后端（cv2.CAP_DSHOW）打开摄像头，设备索引一般为 0
     cap = cv2.VideoCapture(0, cv2.CAP_DSHOW)
 
     if not cap.isOpened():

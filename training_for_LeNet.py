@@ -10,13 +10,13 @@ from paddle.vision.transforms import Normalize
 from paddle.vision.models import LeNet
 import matplotlib.pyplot as plt
 
-# #################### 配置参数 ####################
+# 配置参数
 BATCH_SIZE = 128      # 每次训练输入的图片数量（越大训练越快，但需要更多内存）
 EPOCHS = 8           # 整个数据集遍历训练的次数
 LR = 0.001           # 学习率（控制参数调整速度，太小训练慢，太大会震荡）
 MODEL_SAVE_PATH = './mnist_model'  # 模型保存路径
 
-# #################### 数据准备 ####################
+# 数据准备
 def load_data():
     """
     加载MNIST数据集并进行预处理
@@ -44,7 +44,7 @@ def load_data():
 
     return train_loader, test_loader
 
-# #################### 模型定义 ####################
+# 模型定义
 def create_model():
     """
     创建LeNet-5模型结构
@@ -57,7 +57,7 @@ def create_model():
     paddle.summary(model, (1, 1, 28, 28))  # 输入形状：[批次, 通道, 高, 宽]
     return model
 
-# #################### 训练过程 ####################
+# 训练过程
 def train_model(model, train_loader, test_loader):
     """
     执行模型训练
@@ -171,7 +171,7 @@ def train_model(model, train_loader, test_loader):
 
     return history
 
-# #################### 模型评估 ####################
+# 模型评估
 def evaluate_model(model, data_loader, loss_fn):
     """
     评估模型在数据集上的表现
@@ -194,7 +194,7 @@ def evaluate_model(model, data_loader, loss_fn):
     avg_acc = correct / len(data_loader.dataset)
     return avg_loss, avg_acc
 
-# #################### 可视化训练结果 ####################
+# 可视化训练结果
 def plot_history(history):
     plt.figure(figsize=(12, 4))
     
@@ -219,7 +219,7 @@ def plot_history(history):
     plt.tight_layout()
     plt.show()
 
-# #################### 主程序 ####################
+# 主程序
 if __name__ == '__main__':
     # 1. 加载数据
     train_loader, test_loader = load_data()

@@ -117,11 +117,10 @@ def predict_single_image(img_path):
     
     return prediction
 
-
-#####################主程序#####################
+#主程序
 img_path = './new_tests/3_0.jpg'
 model = paddle.vision.models.LeNet()
-model_state_dict = paddle.load('./mnist_model.pdparams')  # 替换为你的模型路径
+model_state_dict = paddle.load('./mnist_model.pdparams')  # 模型路径
 model.set_state_dict(model_state_dict)
 model.eval()
 

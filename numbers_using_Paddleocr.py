@@ -100,7 +100,7 @@ def preprocess_roi(roi):
     
     return resized
 
-#########################################主程序###########################################
+#主程序
 if __name__ == "__main__":
     image_path = "./new_tests/6_0.jpg"  # 替换为实际图片路径
     detected_digits = process_digits(image_path)
@@ -109,63 +109,3 @@ if __name__ == "__main__":
     print("识别到的数字：")
     for idx, d in enumerate(detected_digits, 1):
         print(f"数字 {idx}: 坐标={d['box'].tolist()}, OCR识别结果={d['text']}")
-
-#########################################LeNet区域#######################################
-# import paddle
-# #普通处理图像
-# def preprocess_image(img):
-    
-#     if img is None:
-#         raise ValueError("Image not found or invalid path")
-    
-#     cv2.imshow('处理前图像',img)
-#     # 等待用户按键（0 表示无限等待）
-#     cv2.waitKey(0)
-#     # 关闭所有 OpenCV 创建的窗口
-#     cv2.destroyAllWindows()
-    
-#     # 转换为灰度图
-#     gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-    
-#     # 二值化反转（MNIST风格：白字黑底）
-#     _, thresh = cv2.threshold(gray, 127, 255, cv2.THRESH_BINARY_INV)
-    
-#     # 调整尺寸为28x28
-#     resized = cv2.resize(thresh, (28, 28))
-    
-#     cv2.imshow('处理后图像',thresh)
-#     # 等待用户按键（0 表示无限等待）
-#     cv2.waitKey(0)
-#     # 关闭所有 OpenCV 创建的窗口
-#     cv2.destroyAllWindows()
-
-#     # 归一化并转换数据类型
-#     normalized = resized.astype('float32') / 255.0
-    
-#     # 调整维度为 [C, H, W] 并添加batch维度
-#     input_tensor = normalized[np.newaxis, np.newaxis, :, :]
-    
-#     return input_tensor
-
-# def predict_single_image(img):
-#     # 预处理图像
-#     input_tensor = preprocess_image(img)
-    
-#     # 转换为Paddle Tensor
-#     input_data = paddle.to_tensor(input_tensor)
-    
-#     # 预测
-#     with paddle.no_grad():
-#         output = model(input_data)
-#         print('result',output)
-#         prediction = paddle.argmax(output, axis=1).numpy()[0]
-    
-#     return prediction
-
-# model = paddle.vision.models.LeNet()
-# model_state_dict = paddle.load('./mnist_model.pdparams')  # 替换为你的模型路径
-# model.set_state_dict(model_state_dict)
-# model.eval()
-
-# pred = predict_single_image(digit_roi)
-# print(f"LeNet识别结果: {pred}")q
