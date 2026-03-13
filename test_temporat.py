@@ -5,6 +5,7 @@ import subprocess
 import argparse
 import re
 
+
 def extract_recognize_result(text):
     # 使用正则表达式匹配“regconize result: ”后的内容，直到“score=”之前
     results = []
@@ -54,7 +55,6 @@ def run_ppocr(image_path):
         print("命令执行失败!")
         print(f"错误信息: {e.stderr}")
 
-#主程序
 if __name__ == "__main__":
     
     os.chdir("/home/cat/python_docs/dig_rec/")
@@ -86,7 +86,12 @@ if __name__ == "__main__":
         ##########显示检测框##########
         out_img = cv2.imread('./out.jpg')
         cv2.imshow('Camera Feed', out_img)
+
+
+
+
         time.sleep(0.1)
+
 
         if cv2.waitKey(1) & 0xFF == ord('q'):  # 按 'q' 键退出
             break
